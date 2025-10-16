@@ -1,0 +1,25 @@
+######################################################################
+#
+# TODO: Write a short (1-3 paragraph) design document about your solution to Q4.
+#       Please include the following:
+#     
+#         1) An explanation of what you wrote and how the ScriptPubKey works
+#         2) Briefly, how the ScriptPubKey you wrote fits into the bigger 
+#            picture of this atomic swap.
+#         3) Consider the case of Alice sending coins to Bob with coinExchangeScript:
+#            Why can Alice always get her money back if Bob doesn't redeem it? 
+#            Why can't this be solved with a simple 1-of-2 multisig? 
+#
+In my solution, I implemented the coinExchangeScript so that the transaction can be redeemed in one of two cases. The first case allows the recipient to claim 
+the funds by providing a secret value x whose SHA256 hash matches the known hash_of_secret, along with a valid signature. The second case allows both the sender
+and the recipient to sign together to reclaim the funds if the secret is never revealed. This logic is implemented using OP_IF and OP_ELSE branches: the IF branch
+checks OP_SHA256 <hash_of_secret> OP_EQUALVERIFY <recipient_pubkey> OP_CHECKSIG, and the ELSE branch performs a 2-of-2 multisig check with both the sender and 
+recipient public keys. This ScriptPubKey is central to the atomic swap because it enforces the same condition on both blockchains. Alice locks her BTC using this
+ script with a hash derived from her secret x, and Bob locks his BCY coins using the same hash. When Alice redeems Bob’s BCY coins, she must reveal x, and since 
+ x is published on the blockchain, Bob can use it to redeem Alice’s BTC coins. This design guarantees atomicity — either both swaps happen or neither do. Alice 
+ can always get her coins back if Bob does not redeem them because her refund transaction is timelocked using nLockTime, allowing her to spend her output only 
+ after a specific number of blocks. This ensures that even if Bob never reveals the secret or goes offline, Alice’s coins are never permanently locked. 
+ A simple 1-of-2 multisig could not achieve this behavior, because it would allow either party to unilaterally claim the coins without revealing a shared 
+ secret or enforcing time constraints. The hash-lock and time-lock together ensure fairness and atomicity across two independent blockchains.
+
+
